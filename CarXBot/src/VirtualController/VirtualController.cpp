@@ -24,30 +24,92 @@ VirtualController::~VirtualController() {
     vigem_free(client);
 }
 
-void VirtualController::replay(std::vector<long long> timestamps, std::vector<DS4_REPORT> recordings) {
-    if (timestamps.empty() || recordings.empty() || timestamps.size() != recordings.size()) {
+void VirtualController::replay(std::vector<controllerState> saves) {
+    if (saves.empty()) {
         std::cerr << "Invalid recordings or timestamps!" << std::endl;
         return;
     }
 
+    // Startzeit erfassen
     start_time = Clock::now();
 
-    for (size_t i = 0; i < timestamps.size(); ++i) {
-        // Zielzeitpunkt berechnen
-        auto target_time = start_time + std::chrono::milliseconds(timestamps[i]);
+    for (size_t i = 0; i < saves.size(); ++i) {
+        auto target_time = start_time + std::chrono::milliseconds(saves[i].timestamp);
 
-        // Warten bis zur Zielzeit (ggf. sleep für CPU-Schonung)
+        // Aktuelles Zeit erfassen
         while (Clock::now() < target_time) {
-            std::this_thread::sleep_for(std::chrono::nanoseconds(500)); // klein halten, um präzise zu bleiben
+            // Aktiv warten – maximale Präzision
+            _mm_pause(); // Entlastet CPU leicht beim Spin-Wait
         }
 
-        // Recording senden
-        auto result = vigem_target_ds4_update(client, controller, recordings[i]);
+        // Report senden
+        const auto& report = saves[i].report;
+        auto result = vigem_target_ds4_update(client, controller, report);
+
+#ifdef _DEBUG
+        std::cout << "Updated DS4 controller at index " << i
+            << " (timestamp " << saves[i].timestamp << "ms)\n";
+#endif
+
         if (result != VIGEM_ERROR_NONE) {
-            std::cerr << "Failed to update controller at timestamp " << timestamps[i] << ": " << result << std::endl;
+            std::cerr << "Failed to update controller at timestamp "
+                << saves[i].timestamp << ": " << result << std::endl;
         }
     }
 
     std::cout << "Replay completed." << std::endl;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+void VirtualController::replay_legacy(std::vector<controllerState> saves) {
+    if (saves.empty()) {
+        std::cerr << "Invalid recordings or timestamps!" << std::endl;
+        return;
+    }
+    start_time = Clock::now();
+    for (size_t i = 0; i < saves.size(); ++i) {
+        auto target_time = start_time + std::chrono::milliseconds(saves[i].timestamp);
+
+        // Aktuelle Zeit
+        auto now = Clock::now();
+
+        // Wartezeit berechnen
+        auto wait_duration = target_time - now;
+
+        if (wait_duration > std::chrono::milliseconds(2)) {
+            // Grobes Schlafen für lange Delays (mehr als 1ms)
+            std::this_thread::sleep_for(wait_duration - std::chrono::milliseconds(1));
+        }
+
+        // Präzise warten (Busy-Wait für Sub-Millisecond-Bereich)
+        while (Clock::now() < target_time) {
+            // aktives Warten im Nanosekundenbereich
+            _mm_pause(); // CPU-Freundliches Spin-Wait
+        }
+
+        // DS4 Report senden
+        const auto& report = saves[i].report;
+        auto result = vigem_target_ds4_update(client, controller, report);
+
+        #ifdef _DEBUG
+        std::cout << "Updated DS4 controller at index " << i << " (timestamp " << timestamps[i] << "ms)\n";
+        #endif
+
+        if (result != VIGEM_ERROR_NONE) {
+            std::cerr << "Failed to update controller at timestamp " << saves[i].timestamp << ": " << result << std::endl;
+        }
+    }
+
+    std::cout << "Replay completed." << std::endl;
+}

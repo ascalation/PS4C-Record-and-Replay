@@ -141,6 +141,7 @@
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\controllerstate.h" />
     <ClInclude Include="src\InputAccess\InputAccess.h" />
     <ClInclude Include="src\VirtualController\VirtualController.h" />
     <ClInclude Include="src\ControllerRecording\Recorder.h" />

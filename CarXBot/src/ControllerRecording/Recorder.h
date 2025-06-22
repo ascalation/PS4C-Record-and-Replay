@@ -3,6 +3,7 @@
 #include <ViGEm/Client.h>
 #include <vector>
 #include <chrono>
+#include "..\controllerstate.h"
 
 using Clock = std::chrono::steady_clock;
 using TimePoint = std::chrono::steady_clock::time_point;
@@ -16,14 +17,11 @@ public:
 	// Sets start_time to 0
 	void set_start_time();
 	// saves current controller inputs with timestamp
-	void save_controller_state(const DS4_REPORT report, TimePoint processing_start, TimePoint processing_time);
+	void save_controller_state(DS4_REPORT report);
 	// Getters for timestamps
-	std::vector<long long> get_timestamps() const;
-	// Getters for recordings
-	std::vector<DS4_REPORT> get_recordings() const;
+	std::vector<controllerState> get_saves() const ;
 
 private:
 	TimePoint start_time;
-	std::vector<long long> timestamps{};
-	std::vector<DS4_REPORT> recordings{};
+	std::vector<controllerState> saves{};
 };

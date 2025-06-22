@@ -8,18 +8,16 @@ void Recorder::set_start_time() {
 	start_time = Clock::now();
 }
 
-void Recorder::save_controller_state(const DS4_REPORT report, TimePoint processing_start, TimePoint processing_time) {
+void Recorder::save_controller_state(DS4_REPORT report) {
 	// Safe timestamp
-	auto pt = std::chrono::duration_cast<std::chrono::milliseconds>(processing_start - processing_time).count();
-	timestamps.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start_time).count() - pt);
-	// Safe ControllerState as XUSB_report
-	recordings.push_back(report);
+	saves.push_back(
+		{
+			std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start_time).count(),
+			report
+		}
+	);
 }
 
-std::vector<long long> Recorder::get_timestamps() const {
-	return timestamps;
-}
-
-std::vector<DS4_REPORT> Recorder::get_recordings() const {
-	return recordings;
+std::vector<controllerState> Recorder::get_saves() const {
+	return saves;
 }

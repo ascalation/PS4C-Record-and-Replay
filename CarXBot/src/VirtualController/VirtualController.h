@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
+#include "..\controllerstate.h"
 
 using Clock = std::chrono::steady_clock;
 using TimePoint = std::chrono::steady_clock::time_point;
@@ -14,7 +15,9 @@ public:
 	VirtualController();
 	~VirtualController();
 
-	void replay(std::vector<long long> timestamps, std::vector<DS4_REPORT> recordings);
+	void replay(std::vector<controllerState> saves);
+
+	void replay_legacy(std::vector<controllerState> saves);
 
 private:
 	TimePoint start_time;
