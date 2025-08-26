@@ -37,7 +37,7 @@ InputAccess::~InputAccess() {
 void InputAccess::reader_thread_func() {
     while (!stop_threads) {
         if (pause_threads) {
-            std::this_thread::yield();  // effizienter als sleep_for(1ms)
+            std::this_thread::yield();
             continue;
         }
 
@@ -73,7 +73,6 @@ void InputAccess::processor_thread_func() {
             input_queue.pop();
             timestamp_queue.pop();
 
-            // Verarbeitung außerhalb des Locks
             lock.unlock();
             process_input_data(result, buffer, timestamp);
             lock.lock();
