@@ -30,19 +30,15 @@ void VirtualController::replay(std::vector<controllerState> saves) {
         return;
     }
 
-    // Startzeit erfassen
     start_time = Clock::now();
 
     for (size_t i = 0; i < saves.size(); ++i) {
         auto target_time = start_time + std::chrono::milliseconds(saves[i].timestamp);
 
-        // Aktuelles Zeit erfassen
         while (Clock::now() < target_time) {
-            // Aktiv warten – maximale Präzision
-            _mm_pause(); // Entlastet CPU leicht beim Spin-Wait
+            _mm_pause();
         }
 
-        // Report senden
         const auto& report = saves[i].report;
         auto result = vigem_target_ds4_update(client, controller, report);
 
@@ -61,17 +57,6 @@ void VirtualController::replay(std::vector<controllerState> saves) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
 void VirtualController::replay_legacy(std::vector<controllerState> saves) {
     if (saves.empty()) {
         std::cerr << "Invalid recordings or timestamps!" << std::endl;
@@ -81,24 +66,18 @@ void VirtualController::replay_legacy(std::vector<controllerState> saves) {
     for (size_t i = 0; i < saves.size(); ++i) {
         auto target_time = start_time + std::chrono::milliseconds(saves[i].timestamp);
 
-        // Aktuelle Zeit
         auto now = Clock::now();
 
-        // Wartezeit berechnen
         auto wait_duration = target_time - now;
 
         if (wait_duration > std::chrono::milliseconds(2)) {
-            // Grobes Schlafen für lange Delays (mehr als 1ms)
             std::this_thread::sleep_for(wait_duration - std::chrono::milliseconds(1));
         }
 
-        // Präzise warten (Busy-Wait für Sub-Millisecond-Bereich)
         while (Clock::now() < target_time) {
-            // aktives Warten im Nanosekundenbereich
-            _mm_pause(); // CPU-Freundliches Spin-Wait
+            _mm_pause();
         }
 
-        // DS4 Report senden
         const auto& report = saves[i].report;
         auto result = vigem_target_ds4_update(client, controller, report);
 
